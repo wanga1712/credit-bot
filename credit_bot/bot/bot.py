@@ -71,6 +71,19 @@ class CreditBot:
             builder = builder.proxy(proxy_url)
             logger.info("Используется прокси для подключения к Telegram API")
         
+        # Проверяем наличие кастомного базового URL для Telegram API (для обхода блокировок)
+        api_base_url = os.getenv("TELEGRAM_API_BASE_URL")
+        if api_base_url:
+            # Убираем /api/bot из URL, если есть (ApplicationBuilder добавит это сам)
+            if api_base_url.endswith("/api/bot"):
+                api_base_url = api_base_url[:-8]
+            elif api_base_url.endswith("/api"):
+                api_base_url = api_base_url[:-4]
+            # Убираем завершающий слэш
+            api_base_url = api_base_url.rstrip("/")
+            builder = builder.base_url(api_base_url)
+            logger.info(f"Используется кастомный базовый URL для Telegram API: {api_base_url}")
+        
         # #region agent log
         try:
             with open(log_path, "a", encoding="utf-8") as f:
