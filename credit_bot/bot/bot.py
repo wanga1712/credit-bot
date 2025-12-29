@@ -39,6 +39,18 @@ class CreditBot:
 
         app = ApplicationBuilder().token(self._token).build()
         register_handlers(app)
+        
+        # Добавляем обработчик ошибок
+        async def error_handler(update: object, context: CallbackContext) -> None:
+            """Обрабатывает ошибки при работе бота."""
+            error = context.error
+            if isinstance(error, TimedOut):
+                logger.warning("Таймаут при отправке сообщения в Telegram.")
+            else:
+                logger.exception("Необработанная ошибка в боте.")
+        
+        app.add_error_handler(error_handler)
+        
         return app
 
     async def _post_init(self, application: Application) -> None:
@@ -56,24 +68,17 @@ class CreditBot:
 
         try:
             self._application = self._build_application()
+            
+            # Устанавливаем хуки после создания, но до запуска
+            # Используем свойства напрямую, а не через builder
             self._application.post_init = self._post_init
             self._application.post_shutdown = self._post_shutdown
             
-            # Добавляем обработчик ошибок
-            async def error_handler(update: object, context: CallbackContext) -> None:
-                """Обрабатывает ошибки при работе бота."""
-                error = context.error
-                if isinstance(error, TimedOut):
-                    logger.warning("Таймаут при отправке сообщения в Telegram.")
-                else:
-                    logger.exception("Необработанная ошибка в боте.")
-            
-            self._application.add_error_handler(error_handler)
-            
-            # Убираем избыточное логирование - оно уже есть в обработчиках
-            
             logger.info("Запуск Telegram-бота...")
-            self._application.run_polling(allowed_updates=Update.ALL_TYPES)
+            self._application.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True
+            )
         except Exception as exc:
             logger.exception("Ошибка при запуске бота.")
             raise
