@@ -220,29 +220,29 @@ class CreditBot:
                     
                     # Явная инициализация для версии 22.5
                     await self._application.initialize()
-                
-                # #region agent log
-                try:
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({
-                            "sessionId": "debug-session",
-                            "runId": "run1",
-                            "hypothesisId": "I",
-                            "location": "bot.py:run:after_initialize",
-                            "message": "After initialize",
-                            "data": {"bot_id": getattr(self._application.bot, 'id', None) if hasattr(self._application, 'bot') else None},
-                            "timestamp": int(__import__("time").time() * 1000)
-                        }) + "\n")
-                except Exception:
-                    pass
-                # #endregion
-                
-                await self._application.start()
-                await self._application.updater.start_polling(
-                    allowed_updates=Update.ALL_TYPES,
-                    drop_pending_updates=True
-                )
-                
+                    
+                    # #region agent log
+                    try:
+                        with open(log_path, "a", encoding="utf-8") as f:
+                            f.write(json.dumps({
+                                "sessionId": "debug-session",
+                                "runId": "run1",
+                                "hypothesisId": "I",
+                                "location": "bot.py:run:after_initialize",
+                                "message": "After initialize",
+                                "data": {"bot_id": getattr(self._application.bot, 'id', None) if hasattr(self._application, 'bot') else None},
+                                "timestamp": int(__import__("time").time() * 1000)
+                            }) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                    
+                    await self._application.start()
+                    await self._application.updater.start_polling(
+                        allowed_updates=Update.ALL_TYPES,
+                        drop_pending_updates=True
+                    )
+                    
                     logger.info("Telegram-бот запущен и готов к работе.")
                     
                     # Ждем до отключения
