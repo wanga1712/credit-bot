@@ -1,4 +1,4 @@
-python-telegram-bot>=20.0
+python-telegram-bot[socks]>=20.0
 pytest>=7.0
 loguru>=0.7
 pre-commit>=3.6
