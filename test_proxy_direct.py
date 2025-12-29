@@ -12,12 +12,39 @@ env_path = Path(__file__).parent / ".env"
 if env_path.exists():
     load_dotenv(env_path)
 
-PROXY_HOST = "124.122.2.12"
-PROXY_PORT = 8080
+# Получаем прокси из .env, если указан
+proxy_url = os.getenv("TELEGRAM_PROXY", "")
+if proxy_url:
+    # Парсим URL прокси
+    if proxy_url.startswith("socks5://"):
+        # SOCKS5 прокси (например, Tor)
+        proxy_host_port = proxy_url.replace("socks5://", "").split(":")
+        PROXY_HOST = proxy_host_port[0]
+        PROXY_PORT = int(proxy_host_port[1]) if len(proxy_host_port) > 1 else 9050
+        PROXY_TYPE = "socks5"
+    elif proxy_url.startswith("http://"):
+        # HTTP прокси
+        proxy_host_port = proxy_url.replace("http://", "").split(":")
+        PROXY_HOST = proxy_host_port[0]
+        PROXY_PORT = int(proxy_host_port[1]) if len(proxy_host_port) > 1 else 8080
+        PROXY_TYPE = "http"
+    else:
+        # По умолчанию HTTP
+        proxy_host_port = proxy_url.split(":")
+        PROXY_HOST = proxy_host_port[0]
+        PROXY_PORT = int(proxy_host_port[1]) if len(proxy_host_port) > 1 else 8080
+        PROXY_TYPE = "http"
+    print(f"📋 Используется прокси из .env: {proxy_url}")
+else:
+    # Значения по умолчанию (для обратной совместимости)
+    PROXY_HOST = "124.122.2.12"
+    PROXY_PORT = 8080
+    PROXY_TYPE = "http"
+    print("⚠️  Прокси не указан в .env, используются значения по умолчанию")
 
 async def test_proxy_connection():
     """Проверяет подключение к прокси."""
-    print(f"Проверка подключения к прокси {PROXY_HOST}:{PROXY_PORT}...")
+    print(f"\nПроверка подключения к прокси {PROXY_HOST}:{PROXY_PORT} (тип: {PROXY_TYPE})...")
     
     # 1. Проверка TCP подключения
     print("\n1. Проверка TCP подключения к прокси...")
