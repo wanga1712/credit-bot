@@ -8,7 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from loguru import logger
 from telegram import Update
-from telegram.error import TimedOut
+from telegram.error import NetworkError, TimedOut
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -253,6 +253,48 @@ class CreditBot:
                     await self._application.stop()
                     await self._application.shutdown()
                     break  # Успешно запустились, выходим из цикла повторов
+                    
+                except NetworkError as exc:
+                    # #region agent log
+                    try:
+                        with open(log_path, "a", encoding="utf-8") as f:
+                            f.write(json.dumps({
+                                "sessionId": "debug-session",
+                                "runId": "run1",
+                                "hypothesisId": "K",
+                                "location": "bot.py:run:network_error",
+                                "message": "Network error (proxy issue?)",
+                                "data": {
+                                    "attempt": attempt,
+                                    "max_retries": max_retries,
+                                    "error_type": type(exc).__name__,
+                                    "error_msg": str(exc)[:200]
+                                },
+                                "timestamp": int(__import__("time").time() * 1000)
+                            }) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                    
+                    if attempt < max_retries:
+                        logger.warning(f"Ошибка сети/прокси (попытка {attempt}/{max_retries}): {type(exc).__name__}")
+                        logger.warning(f"Детали: {str(exc)[:200]}")
+                        logger.info(f"Повтор через {retry_delay} сек...")
+                        await asyncio.sleep(retry_delay)
+                        # Закрываем приложение перед повторной попыткой
+                        try:
+                            if self._application:
+                                await self._application.shutdown()
+                        except Exception:
+                            pass
+                        continue
+                    else:
+                        logger.error("Не удалось подключиться к Telegram API через прокси после всех попыток.")
+                        logger.error("Проверьте:")
+                        logger.error("1. Работает ли прокси: curl --proxy http://124.122.2.12:8080 https://api.telegram.org")
+                        logger.error("2. Правильность адреса прокси в .env (TELEGRAM_PROXY)")
+                        logger.error("3. Попробуйте другой прокси или отключите прокси временно")
+                        raise
                     
                 except TimedOut as exc:
                     # #region agent log
