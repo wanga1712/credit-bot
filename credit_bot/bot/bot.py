@@ -69,12 +69,10 @@ class CreditBot:
         try:
             self._application = self._build_application()
             
-            # Устанавливаем хуки после создания, но до запуска
-            # Используем свойства напрямую, а не через builder
-            self._application.post_init = self._post_init
-            self._application.post_shutdown = self._post_shutdown
-            
             logger.info("Запуск Telegram-бота...")
+            # Запускаем бота - post_init и post_shutdown будут вызваны автоматически
+            # если они установлены через builder, но мы их убрали, чтобы избежать
+            # проблем с инициализацией в новых версиях библиотеки
             self._application.run_polling(
                 allowed_updates=Update.ALL_TYPES,
                 drop_pending_updates=True
