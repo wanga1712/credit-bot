@@ -287,23 +287,23 @@ class CreditBot:
                         raise
                         
                 except Exception as exc:
-                # #region agent log
-                try:
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({
-                            "sessionId": "debug-session",
-                            "runId": "run1",
-                            "hypothesisId": "G",
-                            "location": "bot.py:run:exception",
-                            "message": "Exception caught in async",
-                            "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
-                            "timestamp": int(__import__("time").time() * 1000)
-                        }) + "\n")
-                except Exception:
-                    pass
-                # #endregion
-                logger.exception("Ошибка при запуске бота.")
-                raise
+                    # #region agent log
+                    try:
+                        with open(log_path, "a", encoding="utf-8") as f:
+                            f.write(json.dumps({
+                                "sessionId": "debug-session",
+                                "runId": "run1",
+                                "hypothesisId": "G",
+                                "location": "bot.py:run:exception",
+                                "message": "Exception caught in async",
+                                "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
+                                "timestamp": int(__import__("time").time() * 1000)
+                            }) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                    logger.exception("Ошибка при запуске бота.")
+                    raise
         
         try:
             asyncio.run(_run_async())
