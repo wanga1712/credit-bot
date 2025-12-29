@@ -136,6 +136,8 @@ class CreditBot:
     def run(self) -> None:
         """Запускает бота в режиме polling."""
         
+        import asyncio
+        
         # #region agent log
         import json
         log_path = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
@@ -154,50 +156,86 @@ class CreditBot:
             pass
         # #endregion
 
-        try:
-            self._application = self._build_application()
-            
-            # #region agent log
+        async def _run_async() -> None:
+            """Асинхронная функция для запуска бота с явной инициализацией."""
             try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "run1",
-                        "hypothesisId": "F",
-                        "location": "bot.py:run:before_polling",
-                        "message": "Before run_polling",
-                        "data": {"app_created": self._application is not None},
-                        "timestamp": int(__import__("time").time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # #endregion
-            
-            logger.info("Запуск Telegram-бота...")
-            # Используем стандартный run_polling
-            self._application.run_polling(
-                allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True
-            )
+                self._application = self._build_application()
+                
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({
+                            "sessionId": "debug-session",
+                            "runId": "run1",
+                            "hypothesisId": "H",
+                            "location": "bot.py:run:before_initialize",
+                            "message": "Before initialize",
+                            "data": {"app_created": self._application is not None},
+                            "timestamp": int(__import__("time").time() * 1000)
+                        }) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
+                logger.info("Запуск Telegram-бота...")
+                
+                # Явная инициализация для версии 22.5
+                await self._application.initialize()
+                
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({
+                            "sessionId": "debug-session",
+                            "runId": "run1",
+                            "hypothesisId": "I",
+                            "location": "bot.py:run:after_initialize",
+                            "message": "After initialize",
+                            "data": {"bot_id": getattr(self._application.bot, 'id', None) if hasattr(self._application, 'bot') else None},
+                            "timestamp": int(__import__("time").time() * 1000)
+                        }) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                
+                await self._application.start()
+                await self._application.updater.start_polling(
+                    allowed_updates=Update.ALL_TYPES,
+                    drop_pending_updates=True
+                )
+                
+                logger.info("Telegram-бот запущен и готов к работе.")
+                
+                # Ждем до отключения
+                await self._application.updater.stop()
+                await self._application.stop()
+                await self._application.shutdown()
+                
+            except Exception as exc:
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({
+                            "sessionId": "debug-session",
+                            "runId": "run1",
+                            "hypothesisId": "G",
+                            "location": "bot.py:run:exception",
+                            "message": "Exception caught in async",
+                            "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
+                            "timestamp": int(__import__("time").time() * 1000)
+                        }) + "\n")
+                except Exception:
+                    pass
+                # #endregion
+                logger.exception("Ошибка при запуске бота.")
+                raise
+        
+        try:
+            asyncio.run(_run_async())
         except KeyboardInterrupt:
             logger.info("Остановка бота по запросу пользователя.")
         except Exception as exc:
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "run1",
-                        "hypothesisId": "G",
-                        "location": "bot.py:run:exception",
-                        "message": "Exception caught",
-                        "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
-                        "timestamp": int(__import__("time").time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # #endregion
-            logger.exception("Ошибка при запуске бота.")
+            logger.exception("Сбой при запуске бота.")
             raise
 
 
