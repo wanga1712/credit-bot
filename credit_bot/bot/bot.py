@@ -55,8 +55,21 @@ class CreditBot:
             pass
         # #endregion
 
-        # Упрощенный builder без неподдерживаемых параметров
-        builder = ApplicationBuilder().token(self._token)
+        # Настраиваем builder с увеличенными таймаутами для решения проблем с подключением
+        # В версии 22.5 нужно использовать правильные методы для настройки таймаутов
+        builder = (
+            ApplicationBuilder()
+            .token(self._token)
+            .connect_timeout(30.0)  # Таймаут подключения в секундах
+            .read_timeout(30.0)  # Таймаут чтения в секундах
+            .write_timeout(30.0)  # Таймаут записи в секундах
+        )
+        
+        # Проверяем наличие прокси в переменных окружения
+        proxy_url = os.getenv("TELEGRAM_PROXY")
+        if proxy_url:
+            builder = builder.proxy(proxy_url)
+            logger.info("Используется прокси для подключения к Telegram API")
         
         # #region agent log
         try:
@@ -158,29 +171,33 @@ class CreditBot:
 
         async def _run_async() -> None:
             """Асинхронная функция для запуска бота с явной инициализацией."""
-            try:
-                self._application = self._build_application()
-                
-                # #region agent log
+            max_retries = 3
+            retry_delay = 5  # секунды
+            
+            for attempt in range(1, max_retries + 1):
                 try:
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({
-                            "sessionId": "debug-session",
-                            "runId": "run1",
-                            "hypothesisId": "H",
-                            "location": "bot.py:run:before_initialize",
-                            "message": "Before initialize",
-                            "data": {"app_created": self._application is not None},
-                            "timestamp": int(__import__("time").time() * 1000)
-                        }) + "\n")
-                except Exception:
-                    pass
-                # #endregion
-                
-                logger.info("Запуск Telegram-бота...")
-                
-                # Явная инициализация для версии 22.5
-                await self._application.initialize()
+                    self._application = self._build_application()
+                    
+                    # #region agent log
+                    try:
+                        with open(log_path, "a", encoding="utf-8") as f:
+                            f.write(json.dumps({
+                                "sessionId": "debug-session",
+                                "runId": "run1",
+                                "hypothesisId": "H",
+                                "location": "bot.py:run:before_initialize",
+                                "message": "Before initialize",
+                                "data": {"app_created": self._application is not None, "attempt": attempt},
+                                "timestamp": int(__import__("time").time() * 1000)
+                            }) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                    
+                    logger.info(f"Запуск Telegram-бота... (попытка {attempt}/{max_retries})")
+                    
+                    # Явная инициализация для версии 22.5
+                    await self._application.initialize()
                 
                 # #region agent log
                 try:
@@ -204,14 +221,50 @@ class CreditBot:
                     drop_pending_updates=True
                 )
                 
-                logger.info("Telegram-бот запущен и готов к работе.")
-                
-                # Ждем до отключения
-                await self._application.updater.stop()
-                await self._application.stop()
-                await self._application.shutdown()
-                
-            except Exception as exc:
+                    logger.info("Telegram-бот запущен и готов к работе.")
+                    
+                    # Ждем до отключения
+                    await self._application.updater.stop()
+                    await self._application.stop()
+                    await self._application.shutdown()
+                    break  # Успешно запустились, выходим из цикла повторов
+                    
+                except TimedOut as exc:
+                    # #region agent log
+                    try:
+                        with open(log_path, "a", encoding="utf-8") as f:
+                            f.write(json.dumps({
+                                "sessionId": "debug-session",
+                                "runId": "run1",
+                                "hypothesisId": "J",
+                                "location": "bot.py:run:timeout",
+                                "message": "Connection timeout",
+                                "data": {"attempt": attempt, "max_retries": max_retries},
+                                "timestamp": int(__import__("time").time() * 1000)
+                            }) + "\n")
+                    except Exception:
+                        pass
+                    # #endregion
+                    
+                    if attempt < max_retries:
+                        logger.warning(f"Таймаут подключения (попытка {attempt}/{max_retries}). Повтор через {retry_delay} сек...")
+                        await asyncio.sleep(retry_delay)
+                        # Закрываем приложение перед повторной попыткой
+                        try:
+                            if self._application:
+                                await self._application.shutdown()
+                        except Exception:
+                            pass
+                        continue
+                    else:
+                        logger.error("Не удалось подключиться к Telegram API после всех попыток.")
+                        logger.error("Проверьте:")
+                        logger.error("1. Доступность api.telegram.org с сервера")
+                        logger.error("2. Настройки файрвола")
+                        logger.error("3. Необходимость использования прокси (установите TELEGRAM_PROXY в .env)")
+                        raise
+                        
+                except Exception as exc:
                 # #region agent log
                 try:
                     with open(log_path, "a", encoding="utf-8") as f:
