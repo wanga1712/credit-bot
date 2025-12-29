@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+combine_as_imports = true
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = []
+per-file-ignores = []
+select = ["E", "F", "W"]
+
+[tool.credit_bot]
+logging_library = "loguru"
+style_guide = "PEP8"
+max_module_lines = 150
+require_try_except = true
+modularity_required = true
+comment_language = "ru"
+
