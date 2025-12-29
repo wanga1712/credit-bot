@@ -53,6 +53,18 @@ export TELEGRAM_BOT_TOKEN="ваш_токен_здесь"
 
 > **Важно:** Файл `.env` уже создан в корне проекта. Просто откройте его и вставьте свой токен!
 
+### 4. Настройка прокси (если Telegram API заблокирован)
+
+Если сервер не может подключиться к Telegram API, добавьте прокси в `.env`:
+
+```bash
+TELEGRAM_PROXY=http://proxy.example.com:8080
+# или для SOCKS5:
+TELEGRAM_PROXY=socks5://proxy.example.com:1080
+```
+
+Подробнее см. `PROXY_SETUP.md`
+
 ### 4. Запуск бота
 
 ```bash
