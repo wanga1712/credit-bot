@@ -66,9 +66,10 @@ async def test_proxy_connection():
     print("\n2. Проверка через httpx...")
     try:
         timeout = httpx.Timeout(10.0, connect=10.0)
+        proxy_str = f"{PROXY_TYPE}://{PROXY_HOST}:{PROXY_PORT}"
         async with httpx.AsyncClient(
             timeout=timeout,
-            proxies=f"http://{PROXY_HOST}:{PROXY_PORT}"
+            proxies=proxy_str
         ) as client:
             # Пробуем подключиться к простому HTTP-сайту через прокси
             response = await client.get("http://httpbin.org/ip", timeout=timeout)
@@ -85,9 +86,10 @@ async def test_proxy_connection():
     print("\n3. Проверка HTTPS туннелирования через прокси...")
     try:
         timeout = httpx.Timeout(10.0, connect=10.0)
+        proxy_str = f"{PROXY_TYPE}://{PROXY_HOST}:{PROXY_PORT}"
         async with httpx.AsyncClient(
             timeout=timeout,
-            proxies=f"http://{PROXY_HOST}:{PROXY_PORT}"
+            proxies=proxy_str
         ) as client:
             response = await client.get("https://api.telegram.org", timeout=timeout)
             print(f"   ✅ HTTPS туннелирование работает (статус: {response.status_code})")
@@ -101,4 +103,3 @@ async def test_proxy_connection():
 
 if __name__ == "__main__":
     asyncio.run(test_proxy_connection())
-
