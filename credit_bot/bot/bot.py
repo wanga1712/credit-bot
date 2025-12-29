@@ -55,29 +55,76 @@ class CreditBot:
             pass
         # #endregion
 
+        # Проверяем наличие прокси в переменных окружения
+        proxy_url = os.getenv("TELEGRAM_PROXY")
+        
+        # Для Tor нужны увеличенные таймауты (Tor медленнее из-за маршрутизации)
+        is_tor = proxy_url and proxy_url.startswith("socks5://")
+        connect_timeout = 60.0 if is_tor else 30.0
+        read_timeout = 60.0 if is_tor else 30.0
+        write_timeout = 60.0 if is_tor else 30.0
+        
         # Настраиваем builder с увеличенными таймаутами для решения проблем с подключением
         # В версии 22.5 нужно использовать правильные методы для настройки таймаутов
         builder = (
             ApplicationBuilder()
             .token(self._token)
-            .connect_timeout(30.0)  # Таймаут подключения в секундах
-            .read_timeout(30.0)  # Таймаут чтения в секундах
-            .write_timeout(30.0)  # Таймаут записи в секундах
+            .connect_timeout(connect_timeout)  # Таймаут подключения в секундах
+            .read_timeout(read_timeout)  # Таймаут чтения в секундах
+            .write_timeout(write_timeout)  # Таймаут записи в секундах
         )
-        
-        # Проверяем наличие прокси в переменных окружения
-        proxy_url = os.getenv("TELEGRAM_PROXY")
         if proxy_url:
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "E",
+                        "location": "bot.py:_build_application:proxy_setup",
+                        "message": "Setting up proxy",
+                        "data": {"proxy_url": proxy_url},
+                        "timestamp": int(__import__("time").time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             # В версии 22.5 может быть proxy_url вместо proxy
+            proxy_set = False
             try:
                 builder = builder.proxy(proxy_url)
+                proxy_set = True
+                logger.info(f"Прокси настроен через .proxy(): {proxy_url}")
             except AttributeError:
                 # Если метод proxy не существует, пробуем proxy_url
                 try:
                     builder = builder.proxy_url(proxy_url)
+                    proxy_set = True
+                    logger.info(f"Прокси настроен через .proxy_url(): {proxy_url}")
                 except AttributeError:
                     # Если и это не работает, используем request_kwargs
                     logger.warning(f"Прямая поддержка прокси недоступна, используем request_kwargs")
+            except Exception as e:
+                logger.error(f"Ошибка при настройке прокси: {e}")
+                raise
+            
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "F",
+                        "location": "bot.py:_build_application:proxy_set",
+                        "message": "Proxy setup result",
+                        "data": {"proxy_set": proxy_set, "proxy_url": proxy_url},
+                        "timestamp": int(__import__("time").time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             logger.info(f"Используется прокси для подключения к Telegram API: {proxy_url}")
         
         # Проверяем наличие кастомного базового URL для Telegram API (для обхода блокировок)
