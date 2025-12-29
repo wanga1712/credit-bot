@@ -37,7 +37,16 @@ class CreditBot:
     def _build_application(self) -> Application:
         """Создаёт и настраивает приложение Telegram."""
 
-        app = ApplicationBuilder().token(self._token).build()
+        # Настраиваем builder с увеличенными таймаутами для решения проблем с подключением
+        builder = (
+            ApplicationBuilder()
+            .token(self._token)
+            .get_updates_request(timeout=30)  # Увеличиваем таймаут для get_updates
+            .connect_timeout(30)  # Таймаут подключения
+            .read_timeout(30)  # Таймаут чтения
+        )
+        
+        app = builder.build()
         register_handlers(app)
         
         # Добавляем обработчик ошибок
@@ -70,13 +79,14 @@ class CreditBot:
             self._application = self._build_application()
             
             logger.info("Запуск Telegram-бота...")
-            # Запускаем бота - post_init и post_shutdown будут вызваны автоматически
-            # если они установлены через builder, но мы их убрали, чтобы избежать
-            # проблем с инициализацией в новых версиях библиотеки
+            # Используем стандартный run_polling с увеличенными таймаутами
             self._application.run_polling(
                 allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True
+                drop_pending_updates=True,
+                close_loop=False
             )
+        except KeyboardInterrupt:
+            logger.info("Остановка бота по запросу пользователя.")
         except Exception as exc:
             logger.exception("Ошибка при запуске бота.")
             raise
