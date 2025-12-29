@@ -36,17 +36,62 @@ class CreditBot:
 
     def _build_application(self) -> Application:
         """Создаёт и настраивает приложение Telegram."""
+        
+        # #region agent log
+        import json
+        log_path = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "A",
+                    "location": "bot.py:_build_application:entry",
+                    "message": "Building application",
+                    "data": {"token_length": len(self._token) if self._token else 0},
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
-        # Настраиваем builder с увеличенными таймаутами для решения проблем с подключением
-        builder = (
-            ApplicationBuilder()
-            .token(self._token)
-            .get_updates_request(timeout=30)  # Увеличиваем таймаут для get_updates
-            .connect_timeout(30)  # Таймаут подключения
-            .read_timeout(30)  # Таймаут чтения
-        )
+        # Упрощенный builder без неподдерживаемых параметров
+        builder = ApplicationBuilder().token(self._token)
+        
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "B",
+                    "location": "bot.py:_build_application:before_build",
+                    "message": "Before builder.build()",
+                    "data": {},
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         app = builder.build()
+        
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "C",
+                    "location": "bot.py:_build_application:after_build",
+                    "message": "After builder.build()",
+                    "data": {"app_type": type(app).__name__, "has_bot": hasattr(app, "bot")},
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
+        
         register_handlers(app)
         
         # Добавляем обработчик ошибок
@@ -59,6 +104,22 @@ class CreditBot:
                 logger.exception("Необработанная ошибка в боте.")
         
         app.add_error_handler(error_handler)
+        
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "D",
+                    "location": "bot.py:_build_application:exit",
+                    "message": "Application built successfully",
+                    "data": {},
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
         
         return app
 
@@ -74,20 +135,68 @@ class CreditBot:
 
     def run(self) -> None:
         """Запускает бота в режиме polling."""
+        
+        # #region agent log
+        import json
+        log_path = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "E",
+                    "location": "bot.py:run:entry",
+                    "message": "Starting bot run",
+                    "data": {},
+                    "timestamp": int(__import__("time").time() * 1000)
+                }) + "\n")
+        except Exception:
+            pass
+        # #endregion
 
         try:
             self._application = self._build_application()
             
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "F",
+                        "location": "bot.py:run:before_polling",
+                        "message": "Before run_polling",
+                        "data": {"app_created": self._application is not None},
+                        "timestamp": int(__import__("time").time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
+            
             logger.info("Запуск Telegram-бота...")
-            # Используем стандартный run_polling с увеличенными таймаутами
+            # Используем стандартный run_polling
             self._application.run_polling(
                 allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True,
-                close_loop=False
+                drop_pending_updates=True
             )
         except KeyboardInterrupt:
             logger.info("Остановка бота по запросу пользователя.")
         except Exception as exc:
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({
+                        "sessionId": "debug-session",
+                        "runId": "run1",
+                        "hypothesisId": "G",
+                        "location": "bot.py:run:exception",
+                        "message": "Exception caught",
+                        "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
+                        "timestamp": int(__import__("time").time() * 1000)
+                    }) + "\n")
+            except Exception:
+                pass
+            # #endregion
             logger.exception("Ошибка при запуске бота.")
             raise
 
