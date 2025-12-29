@@ -24,15 +24,28 @@ async def check_connection():
     print("Проверка подключения к Telegram API")
     print("=" * 60)
     
+    # Проверяем наличие прокси
+    proxy_url = os.getenv("TELEGRAM_PROXY")
+    if proxy_url:
+        print(f"\n⚠️  Обнаружен прокси в .env: {proxy_url}")
+        print("   Проверка будет выполнена через прокси")
+    
     # Проверка 1: Базовое подключение к API
     print("\n1. Проверка базового подключения к api.telegram.org...")
     try:
         # Увеличиваем таймауты и отключаем проверку SSL для диагностики
         timeout = httpx.Timeout(30.0, connect=30.0, read=30.0, write=30.0)
+        
+        # Настраиваем прокси, если указан
+        proxies = None
+        if proxy_url:
+            proxies = proxy_url
+        
         async with httpx.AsyncClient(
             timeout=timeout,
             verify=True,  # Проверка SSL включена
-            follow_redirects=True
+            follow_redirects=True,
+            proxies=proxies
         ) as client:
             response = await client.get(f"{TELEGRAM_API}/", timeout=timeout)
             print(f"   ✅ Подключение успешно! Статус: {response.status_code}")
@@ -60,10 +73,14 @@ async def check_connection():
         print(f"\n2. Проверка токена бота...")
         try:
             timeout = httpx.Timeout(30.0, connect=30.0, read=30.0, write=30.0)
+            proxies = None
+            if proxy_url:
+                proxies = proxy_url
             async with httpx.AsyncClient(
                 timeout=timeout,
                 verify=True,
-                follow_redirects=True
+                follow_redirects=True,
+                proxies=proxies
             ) as client:
                 response = await client.get(
                     f"{TELEGRAM_API}/bot{BOT_TOKEN}/getMe",
@@ -93,20 +110,9 @@ async def check_connection():
     else:
         print("\n2. Токен не указан в .env (пропуск проверки токена)")
     
-    # Проверка 3: Проверка прокси (если указан)
-    proxy_url = os.getenv("TELEGRAM_PROXY")
+    # Проверка 3 уже выполнена выше (прокси используется в основных проверках)
     if proxy_url:
-        print(f"\n3. Проверка прокси: {proxy_url}")
-        try:
-            async with httpx.AsyncClient(
-                timeout=10.0,
-                proxies=proxy_url
-            ) as client:
-                response = await client.get(f"{TELEGRAM_API}/")
-                print(f"   ✅ Прокси работает! Статус: {response.status_code}")
-        except Exception as e:
-            print(f"   ❌ Прокси не работает: {e}")
-            return False
+        print(f"\n3. Прокси настроен и используется: {proxy_url}")
     else:
         print("\n3. Прокси не настроен")
     
