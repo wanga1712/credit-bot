@@ -245,7 +245,10 @@ class CreditBot:
                     
                     logger.info("Telegram-бот запущен и готов к работе.")
                     
-                    # Ждем до отключения
+                    # Ждем до отключения - используем idle() для ожидания обновлений
+                    await self._application.updater.idle()
+                    
+                    # После остановки (Ctrl+C или ошибка)
                     await self._application.updater.stop()
                     await self._application.stop()
                     await self._application.shutdown()
