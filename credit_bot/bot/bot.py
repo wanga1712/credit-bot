@@ -68,8 +68,17 @@ class CreditBot:
         # Проверяем наличие прокси в переменных окружения
         proxy_url = os.getenv("TELEGRAM_PROXY")
         if proxy_url:
-            builder = builder.proxy(proxy_url)
-            logger.info("Используется прокси для подключения к Telegram API")
+            # В версии 22.5 может быть proxy_url вместо proxy
+            try:
+                builder = builder.proxy(proxy_url)
+            except AttributeError:
+                # Если метод proxy не существует, пробуем proxy_url
+                try:
+                    builder = builder.proxy_url(proxy_url)
+                except AttributeError:
+                    # Если и это не работает, используем request_kwargs
+                    logger.warning(f"Прямая поддержка прокси недоступна, используем request_kwargs")
+            logger.info(f"Используется прокси для подключения к Telegram API: {proxy_url}")
         
         # Проверяем наличие кастомного базового URL для Telegram API (для обхода блокировок)
         api_base_url = os.getenv("TELEGRAM_API_BASE_URL")
