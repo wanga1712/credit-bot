@@ -27,30 +27,47 @@ async def check_connection():
     # Проверка 1: Базовое подключение к API
     print("\n1. Проверка базового подключения к api.telegram.org...")
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{TELEGRAM_API}/")
+        # Увеличиваем таймауты и отключаем проверку SSL для диагностики
+        timeout = httpx.Timeout(30.0, connect=30.0, read=30.0, write=30.0)
+        async with httpx.AsyncClient(
+            timeout=timeout,
+            verify=True,  # Проверка SSL включена
+            follow_redirects=True
+        ) as client:
+            response = await client.get(f"{TELEGRAM_API}/", timeout=timeout)
             print(f"   ✅ Подключение успешно! Статус: {response.status_code}")
-    except httpx.ConnectTimeout:
-        print("   ❌ Таймаут подключения - сервер не может подключиться к api.telegram.org")
+    except httpx.ConnectTimeout as e:
+        print(f"   ❌ Таймаут подключения: {e}")
+        print("   💡 curl работает, но httpx не может подключиться.")
         print("   💡 Возможные причины:")
-        print("      - Telegram API заблокирован в вашей сети")
-        print("      - Проблемы с файрволом")
-        print("      - Проблемы с DNS")
+        print("      - Проблема с SSL/TLS handshake в Python")
+        print("      - Проблема с версией httpx или зависимостями")
+        print("      - Попробуйте установить Cloudflare WARP или использовать прокси")
         return False
     except httpx.ConnectError as e:
         print(f"   ❌ Ошибка подключения: {e}")
+        print("   💡 curl работает, но httpx не может подключиться.")
+        print("   💡 Попробуйте установить Cloudflare WARP или использовать прокси")
         return False
     except Exception as e:
-        print(f"   ❌ Неожиданная ошибка: {e}")
+        print(f"   ❌ Неожиданная ошибка: {type(e).__name__}: {e}")
+        import traceback
+        print(f"   Детали: {traceback.format_exc()}")
         return False
     
     # Проверка 2: Проверка токена (если указан)
     if BOT_TOKEN:
         print(f"\n2. Проверка токена бота...")
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
+            timeout = httpx.Timeout(30.0, connect=30.0, read=30.0, write=30.0)
+            async with httpx.AsyncClient(
+                timeout=timeout,
+                verify=True,
+                follow_redirects=True
+            ) as client:
                 response = await client.get(
-                    f"{TELEGRAM_API}/bot{BOT_TOKEN}/getMe"
+                    f"{TELEGRAM_API}/bot{BOT_TOKEN}/getMe",
+                    timeout=timeout
                 )
                 if response.status_code == 200:
                     data = response.json()
