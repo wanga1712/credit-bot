@@ -7,7 +7,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 
 from credit_bot.core.calculator import CreditCalculator
 from credit_bot.bot.formatters import format_payment_plan
-from credit_bot.bot.keyboards import get_main_menu_keyboard
+from credit_bot.bot.keyboards import get_cancel_keyboard, get_main_menu_keyboard
 from credit_bot.bot.session import sessions
 from credit_bot.bot.states import ENTER_TARGET_OVERPAYMENT, ENTER_TOLERANCE
 from credit_bot.bot.utils import parse_float
@@ -35,10 +35,18 @@ async def enter_target_overpayment(
     
     value = parse_float(update.message.text)
     if value is None or value <= 0:
-        await update.message.reply_text("Введите положительное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_TARGET_OVERPAYMENT
     session.target_overpayment = value
-    await update.message.reply_text("Введите допуск (в рублях, например 100):")
+    cancel_keyboard = get_cancel_keyboard()
+    await update.message.reply_text(
+        "Введите допуск (в рублях, например 100):",
+        reply_markup=cancel_keyboard,
+    )
     return ENTER_TOLERANCE
 
 
@@ -49,7 +57,11 @@ async def enter_tolerance(update: Update, context: CallbackContext) -> int:
     session = sessions.get(user_id)
     value = parse_float(update.message.text)
     if value is None or value <= 0:
-        await update.message.reply_text("Введите положительное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_TOLERANCE
     session.tolerance = value
 

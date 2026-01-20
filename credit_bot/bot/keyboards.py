@@ -51,3 +51,13 @@ def get_strategy_keyboard() -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(keyboard)
 
+
+def get_cancel_keyboard() -> InlineKeyboardMarkup:
+    """Возвращает клавиатуру с кнопкой 'Начать сначала'."""
+    keyboard = [
+        [
+            InlineKeyboardButton("🔄 Начать сначала", callback_data="action:cancel"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+

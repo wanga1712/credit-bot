@@ -7,7 +7,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 
 from credit_bot.core.models import EarlyRepaymentStrategy
 from credit_bot.bot.calculation_helpers import calculate_and_send_early_result
-from credit_bot.bot.keyboards import get_strategy_keyboard
+from credit_bot.bot.keyboards import get_cancel_keyboard, get_strategy_keyboard
 from credit_bot.bot.session import sessions
 from credit_bot.bot.states import (
     ENTER_EARLY_REPAYMENT_AMOUNT,
@@ -35,13 +35,25 @@ async def enter_payments_made(update: Update, context: CallbackContext) -> int:
     
     value = parse_int(update.message.text)
     if value is None or value < 0:
-        await update.message.reply_text("Введите неотрицательное целое число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите неотрицательное целое число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_PAYMENTS_MADE
     if value >= session.term_months:
-        await update.message.reply_text("Это число должно быть меньше срока кредита.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Это число должно быть меньше срока кредита.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_PAYMENTS_MADE
     session.payments_made = value
-    await update.message.reply_text("Введите сумму досрочного погашения (в рублях):")
+    cancel_keyboard = get_cancel_keyboard()
+    await update.message.reply_text(
+        "Введите сумму досрочного погашения (в рублях):",
+        reply_markup=cancel_keyboard,
+    )
     return ENTER_EARLY_REPAYMENT_AMOUNT
 
 
@@ -54,7 +66,11 @@ async def enter_early_repayment_amount(
     session = sessions.get(user_id)
     value = parse_float(update.message.text)
     if value is None or value <= 0:
-        await update.message.reply_text("Введите положительное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_EARLY_REPAYMENT_AMOUNT
     session.early_repayment_amount = value
     

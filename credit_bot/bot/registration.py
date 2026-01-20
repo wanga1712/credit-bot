@@ -11,7 +11,13 @@ from telegram.ext import (
     filters,
 )
 
-from credit_bot.bot.handlers import cancel, choose_action, handle_callback, start
+from credit_bot.bot.handlers import (
+    cancel,
+    choose_action,
+    handle_callback,
+    handle_cancel_callback,
+    start,
+)
 from credit_bot.bot.input_handlers import (
     calculate_start,
     enter_interest_rate,
@@ -57,41 +63,51 @@ def register_handlers(application: Application) -> None:
         per_user=True,
         states={
             ENTER_LOAN_AMOUNT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_loan_amount)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_loan_amount),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_LOAN_TERM: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_loan_term)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_loan_term),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_INTEREST_RATE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_interest_rate)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_interest_rate),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             CHOOSE_ACTION: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, choose_action),
                 CallbackQueryHandler(handle_callback, pattern="^action:"),
             ],
             ENTER_PAYMENTS_MADE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_payments_made)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_payments_made),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_EARLY_REPAYMENT_AMOUNT: [
                 MessageHandler(
                     filters.TEXT & ~filters.COMMAND, enter_early_repayment_amount
-                )
+                ),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_STRATEGY: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, enter_strategy),
                 CallbackQueryHandler(handle_strategy_callback, pattern="^strategy:"),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_SECOND_AMOUNT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_second_amount)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_second_amount),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_SECOND_PAYMENTS: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_second_payments)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_second_payments),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_TARGET_OVERPAYMENT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_target_overpayment)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_target_overpayment),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
             ENTER_TOLERANCE: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_tolerance)
+                MessageHandler(filters.TEXT & ~filters.COMMAND, enter_tolerance),
+                CallbackQueryHandler(handle_cancel_callback, pattern="^action:cancel$"),
             ],
         },
         fallbacks=[CommandHandler("cancel", cancel)],

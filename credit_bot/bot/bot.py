@@ -37,24 +37,6 @@ class CreditBot:
     def _build_application(self) -> Application:
         """Создаёт и настраивает приложение Telegram."""
         
-        # #region agent log
-        import json
-        log_path = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "A",
-                    "location": "bot.py:_build_application:entry",
-                    "message": "Building application",
-                    "data": {"token_length": len(self._token) if self._token else 0},
-                    "timestamp": int(__import__("time").time() * 1000)
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
-
         # Проверяем наличие прокси в переменных окружения
         proxy_url = os.getenv("TELEGRAM_PROXY")
         
@@ -74,22 +56,6 @@ class CreditBot:
             .write_timeout(write_timeout)  # Таймаут записи в секундах
         )
         if proxy_url:
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "run1",
-                        "hypothesisId": "E",
-                        "location": "bot.py:_build_application:proxy_setup",
-                        "message": "Setting up proxy",
-                        "data": {"proxy_url": proxy_url},
-                        "timestamp": int(__import__("time").time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # #endregion
-            
             # В версии 22.5 может быть proxy_url вместо proxy
             proxy_set = False
             try:
@@ -109,22 +75,6 @@ class CreditBot:
                 logger.error(f"Ошибка при настройке прокси: {e}")
                 raise
             
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({
-                        "sessionId": "debug-session",
-                        "runId": "run1",
-                        "hypothesisId": "F",
-                        "location": "bot.py:_build_application:proxy_set",
-                        "message": "Proxy setup result",
-                        "data": {"proxy_set": proxy_set, "proxy_url": proxy_url},
-                        "timestamp": int(__import__("time").time() * 1000)
-                    }) + "\n")
-            except Exception:
-                pass
-            # #endregion
-            
             logger.info(f"Используется прокси для подключения к Telegram API: {proxy_url}")
         
         # Проверяем наличие кастомного базового URL для Telegram API (для обхода блокировок)
@@ -140,39 +90,7 @@ class CreditBot:
             builder = builder.base_url(api_base_url)
             logger.info(f"Используется кастомный базовый URL для Telegram API: {api_base_url}")
         
-        # #region agent log
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "B",
-                    "location": "bot.py:_build_application:before_build",
-                    "message": "Before builder.build()",
-                    "data": {},
-                    "timestamp": int(__import__("time").time() * 1000)
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
-        
         app = builder.build()
-        
-        # #region agent log
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "C",
-                    "location": "bot.py:_build_application:after_build",
-                    "message": "After builder.build()",
-                    "data": {"app_type": type(app).__name__, "has_bot": hasattr(app, "bot")},
-                    "timestamp": int(__import__("time").time() * 1000)
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
         
         register_handlers(app)
         
@@ -186,22 +104,6 @@ class CreditBot:
                 logger.exception("Необработанная ошибка в боте.")
         
         app.add_error_handler(error_handler)
-        
-        # #region agent log
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "D",
-                    "location": "bot.py:_build_application:exit",
-                    "message": "Application built successfully",
-                    "data": {},
-                    "timestamp": int(__import__("time").time() * 1000)
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
         
         return app
 
@@ -219,24 +121,6 @@ class CreditBot:
         """Запускает бота в режиме polling."""
         
         import asyncio
-        
-        # #region agent log
-        import json
-        log_path = Path(__file__).parent.parent.parent / ".cursor" / "debug.log"
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({
-                    "sessionId": "debug-session",
-                    "runId": "run1",
-                    "hypothesisId": "E",
-                    "location": "bot.py:run:entry",
-                    "message": "Starting bot run",
-                    "data": {},
-                    "timestamp": int(__import__("time").time() * 1000)
-                }) + "\n")
-        except Exception:
-            pass
-        # #endregion
 
         async def _run_async() -> None:
             """Асинхронная функция для запуска бота с явной инициализацией."""
@@ -247,42 +131,10 @@ class CreditBot:
                 try:
                     self._application = self._build_application()
                     
-                    # #region agent log
-                    try:
-                        with open(log_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps({
-                                "sessionId": "debug-session",
-                                "runId": "run1",
-                                "hypothesisId": "H",
-                                "location": "bot.py:run:before_initialize",
-                                "message": "Before initialize",
-                                "data": {"app_created": self._application is not None, "attempt": attempt},
-                                "timestamp": int(__import__("time").time() * 1000)
-                            }) + "\n")
-                    except Exception:
-                        pass
-                    # #endregion
-                    
                     logger.info(f"Запуск Telegram-бота... (попытка {attempt}/{max_retries})")
                     
                     # Явная инициализация для версии 22.5
                     await self._application.initialize()
-                    
-                    # #region agent log
-                    try:
-                        with open(log_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps({
-                                "sessionId": "debug-session",
-                                "runId": "run1",
-                                "hypothesisId": "I",
-                                "location": "bot.py:run:after_initialize",
-                                "message": "After initialize",
-                                "data": {"bot_id": getattr(self._application.bot, 'id', None) if hasattr(self._application, 'bot') else None},
-                                "timestamp": int(__import__("time").time() * 1000)
-                            }) + "\n")
-                    except Exception:
-                        pass
-                    # #endregion
                     
                     await self._application.start()
                     await self._application.updater.start_polling(
@@ -292,36 +144,20 @@ class CreditBot:
                     
                     logger.info("Telegram-бот запущен и готов к работе.")
                     
-                    # Ждем до отключения - используем idle() для ожидания обновлений
-                    await self._application.updater.idle()
-                    
-                    # После остановки (Ctrl+C или ошибка)
-                    await self._application.updater.stop()
-                    await self._application.stop()
-                    await self._application.shutdown()
+                    # Ждем до отключения - используем бесконечный цикл для ожидания обновлений
+                    try:
+                        while True:
+                            await asyncio.sleep(1)
+                    except KeyboardInterrupt:
+                        logger.info("Получен сигнал остановки.")
+                    finally:
+                        # После остановки (Ctrl+C или ошибка)
+                        await self._application.updater.stop()
+                        await self._application.stop()
+                        await self._application.shutdown()
                     break  # Успешно запустились, выходим из цикла повторов
                     
                 except NetworkError as exc:
-                    # #region agent log
-                    try:
-                        with open(log_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps({
-                                "sessionId": "debug-session",
-                                "runId": "run1",
-                                "hypothesisId": "K",
-                                "location": "bot.py:run:network_error",
-                                "message": "Network error (proxy issue?)",
-                                "data": {
-                                    "attempt": attempt,
-                                    "max_retries": max_retries,
-                                    "error_type": type(exc).__name__,
-                                    "error_msg": str(exc)[:200]
-                                },
-                                "timestamp": int(__import__("time").time() * 1000)
-                            }) + "\n")
-                    except Exception:
-                        pass
-                    # #endregion
                     
                     if attempt < max_retries:
                         logger.warning(f"Ошибка сети/прокси (попытка {attempt}/{max_retries}): {type(exc).__name__}")
@@ -344,22 +180,6 @@ class CreditBot:
                         raise
                     
                 except TimedOut as exc:
-                    # #region agent log
-                    try:
-                        with open(log_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps({
-                                "sessionId": "debug-session",
-                                "runId": "run1",
-                                "hypothesisId": "J",
-                                "location": "bot.py:run:timeout",
-                                "message": "Connection timeout",
-                                "data": {"attempt": attempt, "max_retries": max_retries},
-                                "timestamp": int(__import__("time").time() * 1000)
-                            }) + "\n")
-                    except Exception:
-                        pass
-                    # #endregion
-                    
                     if attempt < max_retries:
                         logger.warning(f"Таймаут подключения (попытка {attempt}/{max_retries}). Повтор через {retry_delay} сек...")
                         await asyncio.sleep(retry_delay)
@@ -379,21 +199,6 @@ class CreditBot:
                         raise
                         
                 except Exception as exc:
-                    # #region agent log
-                    try:
-                        with open(log_path, "a", encoding="utf-8") as f:
-                            f.write(json.dumps({
-                                "sessionId": "debug-session",
-                                "runId": "run1",
-                                "hypothesisId": "G",
-                                "location": "bot.py:run:exception",
-                                "message": "Exception caught in async",
-                                "data": {"exception_type": type(exc).__name__, "exception_msg": str(exc)},
-                                "timestamp": int(__import__("time").time() * 1000)
-                            }) + "\n")
-                    except Exception:
-                        pass
-                    # #endregion
                     logger.exception("Ошибка при запуске бота.")
                     raise
         

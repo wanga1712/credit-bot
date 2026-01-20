@@ -8,7 +8,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 from credit_bot.core.calculator import CreditCalculator
 from credit_bot.core.models import EarlyRepayment, EarlyRepaymentStrategy
 from credit_bot.bot.formatters import format_early_result
-from credit_bot.bot.keyboards import get_main_menu_keyboard
+from credit_bot.bot.keyboards import get_cancel_keyboard, get_main_menu_keyboard
 from credit_bot.bot.session import sessions
 from credit_bot.bot.states import ENTER_SECOND_AMOUNT, ENTER_SECOND_PAYMENTS
 from credit_bot.bot.utils import parse_float, parse_int
@@ -23,12 +23,18 @@ async def enter_second_amount(update: Update, context: CallbackContext) -> int:
     session = sessions.get(user_id)
     value = parse_float(update.message.text)
     if value is None or value <= 0:
-        await update.message.reply_text("Введите положительное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_SECOND_AMOUNT
     session.secondary_amount = value
     if session.strategy == EarlyRepaymentStrategy.COMBINED_TERM_THEN_PAYMENT.value:
+        cancel_keyboard = get_cancel_keyboard()
         await update.message.reply_text(
-            "После скольких платежей сделать второе погашение?"
+            "После скольких платежей сделать второе погашение?",
+            reply_markup=cancel_keyboard,
         )
         return ENTER_SECOND_PAYMENTS
     await _finish_combined(update, context)
@@ -42,8 +48,10 @@ async def enter_second_payments(update: Update, context: CallbackContext) -> int
     session = sessions.get(user_id)
     value = parse_int(update.message.text)
     if value is None or value <= session.payments_made:
+        cancel_keyboard = get_cancel_keyboard()
         await update.message.reply_text(
-            "Введите число больше количества уже сделанных платежей."
+            "Введите число больше количества уже сделанных платежей.",
+            reply_markup=cancel_keyboard,
         )
         return ENTER_SECOND_PAYMENTS
     session.secondary_payments = value

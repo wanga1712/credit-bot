@@ -59,6 +59,16 @@ async def handle_callback(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
     logger.info(f"Пользователь {user_id} нажал на кнопку: {data}")
     
+    # Обработка кнопки "Начать сначала" - проверяем первым
+    if data == "action:cancel":
+        sessions.reset(user_id)
+        keyboard = get_main_menu_keyboard()
+        await query.edit_message_text(
+            "Операция отменена. Выберите действие:",
+            reply_markup=keyboard,
+        )
+        return ConversationHandler.END
+    
     if data.startswith("action:"):
         action = data.split(":")[1]
         session = sessions.get(user_id)
@@ -77,9 +87,12 @@ async def handle_callback(update: Update, context: CallbackContext) -> int:
                 )
                 # Сохраняем выбранное действие, чтобы после ввода параметров перейти к нему
                 session.strategy = action
+                from credit_bot.bot.keyboards import get_cancel_keyboard
+                cancel_keyboard = get_cancel_keyboard()
                 await query.edit_message_text(
                     "Сначала нужно рассчитать базовый график.\n"
-                    "Введите сумму кредита (в рублях):"
+                    "Введите сумму кредита (в рублях):",
+                    reply_markup=cancel_keyboard,
                 )
                 return ENTER_LOAN_AMOUNT
         
@@ -89,19 +102,34 @@ async def handle_callback(update: Update, context: CallbackContext) -> int:
             session.loan_amount = None
             session.term_months = None
             session.annual_interest_rate = None
-            await query.edit_message_text("Введите сумму кредита (в рублях):")
+            from credit_bot.bot.keyboards import get_cancel_keyboard
+            cancel_keyboard = get_cancel_keyboard()
+            await query.edit_message_text(
+                "Введите сумму кредита (в рублях):",
+                reply_markup=cancel_keyboard,
+            )
             return ENTER_LOAN_AMOUNT
         elif action == "reduce_payment":
             # Сохраняем выбранную стратегию
             logger.info(f"Пользователь {user_id} выбрал 'Уменьшить платеж'")
             session.strategy = "reduce_payment"
-            await query.edit_message_text("Сколько платежей уже сделано?")
+            from credit_bot.bot.keyboards import get_cancel_keyboard
+            cancel_keyboard = get_cancel_keyboard()
+            await query.edit_message_text(
+                "Сколько платежей уже сделано?",
+                reply_markup=cancel_keyboard,
+            )
             return ENTER_PAYMENTS_MADE
         elif action == "reduce_term":
             # Сохраняем выбранную стратегию
             logger.info(f"Пользователь {user_id} выбрал 'Уменьшить срок'")
             session.strategy = "reduce_term"
-            await query.edit_message_text("Сколько платежей уже сделано?")
+            from credit_bot.bot.keyboards import get_cancel_keyboard
+            cancel_keyboard = get_cancel_keyboard()
+            await query.edit_message_text(
+                "Сколько платежей уже сделано?",
+                reply_markup=cancel_keyboard,
+            )
             return ENTER_PAYMENTS_MADE
         elif action == "combined":
             # Комбинированная стратегия: срок и платёж
@@ -110,11 +138,21 @@ async def handle_callback(update: Update, context: CallbackContext) -> int:
                 "(комбинированная стратегия)"
             )
             session.strategy = "combined"
-            await query.edit_message_text("Сколько платежей уже сделано?")
+            from credit_bot.bot.keyboards import get_cancel_keyboard
+            cancel_keyboard = get_cancel_keyboard()
+            await query.edit_message_text(
+                "Сколько платежей уже сделано?",
+                reply_markup=cancel_keyboard,
+            )
             return ENTER_PAYMENTS_MADE
         elif action == "payment":
             logger.info(f"Пользователь {user_id} выбрал 'Подобрать платеж для переплаты'")
-            await query.edit_message_text("Введите желаемую переплату (в рублях):")
+            from credit_bot.bot.keyboards import get_cancel_keyboard
+            cancel_keyboard = get_cancel_keyboard()
+            await query.edit_message_text(
+                "Введите желаемую переплату (в рублях):",
+                reply_markup=cancel_keyboard,
+            )
             return ENTER_TARGET_OVERPAYMENT
 
     logger.warning(f"Неизвестный callback_data от пользователя {user_id}: {data}")
@@ -142,6 +180,22 @@ async def cancel(update: Update, context: CallbackContext) -> int:
     sessions.reset(user_id)
     keyboard = get_main_menu_keyboard()
     await update.message.reply_text(
+        "Операция отменена. Выберите действие:",
+        reply_markup=keyboard,
+    )
+    return ConversationHandler.END
+
+
+async def handle_cancel_callback(update: Update, context: CallbackContext) -> int:
+    """Обрабатывает нажатие на кнопку 'Начать сначала'."""
+
+    query = update.callback_query
+    await query.answer()
+    
+    user_id = update.effective_user.id
+    sessions.reset(user_id)
+    keyboard = get_main_menu_keyboard()
+    await query.edit_message_text(
         "Операция отменена. Выберите действие:",
         reply_markup=keyboard,
     )

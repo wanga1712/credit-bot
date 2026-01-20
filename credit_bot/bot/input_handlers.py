@@ -8,7 +8,7 @@ from telegram.ext import CallbackContext, ConversationHandler
 
 from credit_bot.core.calculator import CreditCalculator
 from credit_bot.bot.formatters import format_schedule
-from credit_bot.bot.keyboards import get_main_menu_keyboard
+from credit_bot.bot.keyboards import get_cancel_keyboard, get_main_menu_keyboard
 from credit_bot.bot.session import sessions
 from credit_bot.bot.states import (
     CHOOSE_ACTION,
@@ -29,7 +29,11 @@ async def calculate_start(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
     logger.info(f"Пользователь {user_id} начал расчёт кредита")
     sessions.reset(user_id)
-    await update.message.reply_text("Введите сумму кредита (в рублях):")
+    cancel_keyboard = get_cancel_keyboard()
+    await update.message.reply_text(
+        "Введите сумму кредита (в рублях):",
+        reply_markup=cancel_keyboard,
+    )
     return ENTER_LOAN_AMOUNT
 
 
@@ -42,11 +46,19 @@ async def enter_loan_amount(update: Update, context: CallbackContext) -> int:
     value = parse_float(update.message.text)
     if value is None or value <= 0:
         logger.warning(f"Неверный ввод суммы кредита от пользователя {user_id}: {update.message.text}")
-        await update.message.reply_text("Введите положительное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_LOAN_AMOUNT
     session.loan_amount = value
     logger.info(f"Сумма кредита сохранена: {value} для пользователя {user_id}")
-    await update.message.reply_text("Введите срок кредита (в месяцах):")
+    cancel_keyboard = get_cancel_keyboard()
+    await update.message.reply_text(
+        "Введите срок кредита (в месяцах):",
+        reply_markup=cancel_keyboard,
+    )
     return ENTER_LOAN_TERM
 
 
@@ -59,11 +71,19 @@ async def enter_loan_term(update: Update, context: CallbackContext) -> int:
     value = parse_int(update.message.text)
     if value is None or value <= 0:
         logger.warning(f"Неверный ввод срока кредита от пользователя {user_id}: {update.message.text}")
-        await update.message.reply_text("Введите положительное целое число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите положительное целое число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_LOAN_TERM
     session.term_months = value
     logger.info(f"Срок кредита сохранён: {value} для пользователя {user_id}")
-    await update.message.reply_text("Введите годовую процентную ставку (%):")
+    cancel_keyboard = get_cancel_keyboard()
+    await update.message.reply_text(
+        "Введите годовую процентную ставку (%):",
+        reply_markup=cancel_keyboard,
+    )
     return ENTER_INTEREST_RATE
 
 
@@ -76,7 +96,11 @@ async def enter_interest_rate(update: Update, context: CallbackContext) -> int:
     value = parse_float(update.message.text)
     if value is None or value < 0:
         logger.warning(f"Неверный ввод ставки от пользователя {user_id}: {update.message.text}")
-        await update.message.reply_text("Введите неотрицательное число.")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите неотрицательное число.",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_INTEREST_RATE
     session.annual_interest_rate = value
     logger.info(
@@ -102,28 +126,44 @@ async def enter_interest_rate(update: Update, context: CallbackContext) -> int:
             f"У пользователя {user_id} было выбрано действие 'reduce_payment', "
             f"переходим к запросу количества платежей"
         )
-        await update.message.reply_text("Сколько платежей уже сделано?")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Сколько платежей уже сделано?",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_PAYMENTS_MADE
     if session.strategy == "reduce_term":
         logger.info(
             f"У пользователя {user_id} было выбрано действие 'reduce_term', "
             f"переходим к запросу количества платежей"
         )
-        await update.message.reply_text("Сколько платежей уже сделано?")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Сколько платежей уже сделано?",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_PAYMENTS_MADE
     if session.strategy == "combined":
         logger.info(
             f"У пользователя {user_id} было выбрано действие 'combined', "
             f"переходим к запросу количества платежей (комбинированная стратегия)"
         )
-        await update.message.reply_text("Сколько платежей уже сделано?")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Сколько платежей уже сделано?",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_PAYMENTS_MADE
     if session.strategy == "payment":
         logger.info(
             f"У пользователя {user_id} было выбрано действие 'payment', "
             f"переходим к запросу переплаты"
         )
-        await update.message.reply_text("Введите желаемую переплату (в рублях):")
+        cancel_keyboard = get_cancel_keyboard()
+        await update.message.reply_text(
+            "Введите желаемую переплату (в рублях):",
+            reply_markup=cancel_keyboard,
+        )
         return ENTER_TARGET_OVERPAYMENT
 
     # Иначе показываем меню выбора действий
